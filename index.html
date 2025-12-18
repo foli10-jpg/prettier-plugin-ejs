@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Albania F-Game</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas {
+    background: #222;
+    border: 2px solid white;
+    touch-action: manipulation;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="360" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let boxes = [];
+let score = 0;
+let gameOver = false;
+let speed = 3;
+
+function resetGame() {
+  boxes = [];
+  score = 0;
+  speed = 3;
+  gameOver = false;
+  createBoxes();
+}
+
+function createBoxes() {
+  for (let i = 0; i < 3; i++) {
+    boxes.push(createBox(-i * 200));
+  }
+}
+
+function createBox(y) {
+  return {
+    x: Math.random() * 300,
+    y: y,
+    size: 50,
+    bomb: Math.random() < 0.3
+  };
+}
+
+canvas.addEventListener("click", handleClick);
+canvas.addEventListener("touchstart", e => {
+  const touch = e.touches[0];
+  handleClick({
+    clientX: touch.clientX,
+    clientY: touch.clientY
+  });
+});
+
+function handleClick(e) {
+  if (gameOver) {
+    resetGame();
+    return;
+  }
+
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  boxes.forEach(box => {
+    if (
+      x > box.x &&
+      x < box.x + box.size &&
+      y > box.y &&
+      y < box.y + box.size
+    ) {
+      if (box.bomb) {
+        gameOver = true; // bomb = humb
+      } else {
+        score++;
+        speed += 0.2;
+        Object.assign(box, createBox(-60));
+      }
+    }
+  });
+}
+
+function update() {
+  if (gameOver) return;
+
+  boxes.forEach(box => {
+    box.y += speed;
+
+    if (box.y > canvas.height) {
+      if (!box.bomb) {
+        gameOver = true; // kuti normale ne fund = humb
+      } else {
+        Object.assign(box, createBox(-60));
+      }
+    }
+  });
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  boxes.forEach(box => {
+    ctx.fillStyle = box.bomb ? "red" : "deepskyblue";
+    ctx.fillRect(box.x, box.y, box.size, box.size);
+
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText(
+      box.bomb ? "💣" : "A",
+      box.x + 15,
+      box.y + 32
+    );
+  });
+
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 30);
+
+  if (gameOver) {
+    ctx.fillStyle = "white";
+    ctx.font = "26px Arial";
+    ctx.fillText("GAME OVER", 90, 300);
+    ctx.font = "16px Arial";
+    ctx.fillText("Prek për Restart", 110, 330);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+createBoxes();
+loop();
+</script>
+
+</body>
+</html>
